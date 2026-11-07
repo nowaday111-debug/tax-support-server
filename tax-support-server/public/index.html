@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Quản trị License — Hóa đơn &amp; Tờ khai</title>
+<style>
+  :root { --primary:#2563eb; --primary-hover:#1d4ed8; --bg:#f8fafc; --surface:#fff; --fg:#0f172a; --muted:#475569; --border:#e2e8f0; --soft:#f1f5f9;
+          --ok:#15803d; --ok-bg:#dcfce7; --warn:#b45309; --warn-bg:#fef3c7; --bad:#b91c1c; --bad-bg:#fee2e2; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background:var(--bg); color:var(--fg); font-size:14px; }
+  header { height:56px; background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 16px; }
+  header b { color:var(--primary); }
+  main { max-width:1200px; margin:0 auto; padding:16px; display:grid; gap:16px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; }
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.04em; margin:0 0 12px; }
+  label { display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
+  input, select { height:34px; border:1px solid var(--border); border-radius:8px; padding:0 10px; font:inherit; background:#fff; width:100%; }
+  input:focus, select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.15); }
+  button { height:34px; border-radius:8px; border:1px solid var(--border); background:#fff; padding:0 12px; font:inherit; font-weight:600; cursor:pointer; white-space:nowrap; }
+  button.primary { background:var(--primary); color:#fff; border-color:var(--primary); }
+  button.primary:hover { background:var(--primary-hover); }
+  button.small { height:28px; font-size:12px; padding:0 8px; }
+  .row { display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); align-items:end; }
+  .stats { display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+  .stat { border:1px solid var(--border); border-radius:10px; padding:12px; }
+  .stat span { font-size:12px; color:var(--muted); } .stat div { font-size:22px; font-weight:700; margin-top:4px; }
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:left; padding:8px; border-bottom:1px solid var(--soft); white-space:nowrap; }
+  th { font-size:12px; color:var(--muted); font-weight:600; }
+  code { font-family: ui-monospace, Consolas, monospace; font-size:12.5px; }
+  .pill { font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px; background:var(--soft); color:var(--muted); }
+  .pill.ok { background:var(--ok-bg); color:var(--ok); } .pill.warn { background:var(--warn-bg); color:var(--warn); } .pill.bad { background:var(--bad-bg); color:var(--bad); }
+  .msg { font-size:13px; margin-top:8px; min-height:18px; } .msg.err { color:var(--bad); } .msg.ok { color:var(--ok); }
+  #login { max-width:380px; margin:64px auto; }
+  .hidden { display:none !important; }
+  .toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+  .toolbar input, .toolbar select { width:auto; min-width:160px; }
+  textarea { width:100%; min-height:90px; font-family: ui-monospace, Consolas, monospace; font-size:12.5px; border:1px solid var(--border); border-radius:8px; padding:8px; }
+</style>
+</head>
+<body>
+<header><div><b>Hóa đơn &amp; Tờ khai</b> · Quản trị tài khoản &amp; License</div><div id="who" class="hidden"><span id="whoEmail"></span> <button class="small" id="logoutBtn">Đăng xuất</button></div></header>
+
+<section id="login" class="card">
+  <h2>Đăng nhập quản trị</h2>
+  <form id="loginForm">
+    <label>Email</label><input name="email" type="email" required autocomplete="username" />
+    <div style="height:10px"></div>
+    <label>Mật khẩu</label><input name="password" type="password" required autocomplete="current-password" />
+    <div style="height:14px"></div>
+    <button class="primary" style="width:100%">Đăng nhập</button>
+    <div class="msg" id="loginMsg"></div>
+  </form>
+</section>
+
+<main id="app" class="hidden">
+  <section class="card">
+    <h2>Tổng quan</h2>
+    <div class="stats" id="stats"></div>
+    <div class="toolbar" style="margin-top:12px"><span id="mailInfo" class="pill"></span><input id="testMailTo" type="email" placeholder="Gửi thư kiểm tra tới…" /><button class="small" id="testMailBtn">Gửi thư kiểm tra</button><span class="msg" id="testMailMsg"></span></div>
+  </section>
+
+  <section class="card hidden" id="rootCard">
+    <h2>Quản trị viên (chỉ root)</h2>
+    <form id="adminForm" class="row">
+      <div><label>Email</label><input name="email" type="email" required /></div>
+      <div><label>Họ tên</label><input name="name" /></div>
+      <div><label>Mật khẩu (bỏ trống nếu nâng tài khoản đã có)</label><input name="password" type="password" autocomplete="new-password" /></div>
+      <div><button class="primary" style="width:100%">Thêm quản trị viên</button></div>
+    </form>
+    <div class="msg" id="adminMsg"></div>
+    <p style="font-size:12px;color:var(--muted);margin:8px 0 0">Quản trị viên: tạo/thu hồi key, cộng ngày, khoá khách. Root thêm: cấp/bỏ quyền quản trị, đặt lại mật khẩu, xoá tài khoản.</p>
+  </section>
+
+  <section class="card">
+    <h2>Tạo license-key</h2>
+    <form id="genForm" class="row">
+      <div><label>Thời hạn</label><select name="days"><option value="30">1 tháng (30 ngày)</option><option value="90">3 tháng (90 ngày)</option><option value="180">6 tháng (180 ngày)</option><option value="365" selected>1 năm (365 ngày)</option><option value="730">2 năm (730 ngày)</option><option value="custom">Tự nhập…</option></select></div>
+      <div id="customDaysBox" class="hidden"><label>Số ngày</label><input name="customDays" type="number" min="1" max="3650" value="365" /></div>
+      <div><label>Số lượng</label><input name="count" type="number" min="1" max="500" value="1" /></div>
+      <div><label>Chỉ dùng cho email (tuỳ chọn)</label><input name="customer_email" type="email" placeholder="khach@gmail.com" /></div>
+      <div><label>Ghi chú (đơn hàng, khách…)</label><input name="note" maxlength="300" /></div>
+      <div><button class="primary" style="width:100%">Tạo key</button></div>
+    </form>
+    <div id="genResult" class="hidden" style="margin-top:12px">
+      <label>Key vừa tạo (gửi cho khách):</label>
+      <textarea id="genKeys" readonly></textarea>
+      <div class="toolbar" style="margin-top:8px"><button class="small" id="copyKeys">Sao chép</button><button class="small" id="csvKeys">Tải CSV</button></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Danh sách license-key</h2>
+    <div class="toolbar"><select id="keyFilter"><option value="">Tất cả</option><option value="new">Chưa dùng</option><option value="active">Đã kích hoạt</option><option value="revoked">Đã thu hồi</option></select><input id="keySearch" placeholder="Tìm key / email / ghi chú" /></div>
+    <div class="table-wrap"><table><thead><tr><th>Key</th><th>Thời hạn</th><th>Trạng thái</th><th>Khách</th><th>Ghi chú</th><th>Ngày tạo</th><th></th></tr></thead><tbody id="keysBody"></tbody></table></div>
+  </section>
+
+  <section class="card">
+    <h2>Khách hàng</h2>
+    <div class="toolbar"><input id="userSearch" placeholder="Tìm email / tên / công ty" /></div>
+    <div class="table-wrap"><table><thead><tr><th>Email</th><th>Họ tên</th><th>Công ty</th><th>Gói</th><th>Dùng đến</th><th>Còn</th><th>Thiết bị</th><th>Trạng thái</th><th></th></tr></thead><tbody id="usersBody"></tbody></table></div>
+  </section>
+
+  <section class="card">
+    <h2>Nhật ký</h2>
+    <div class="table-wrap"><table><thead><tr><th>Thời điểm</th><th>Thao tác</th><th>Người thực hiện</th><th>Chi tiết</th></tr></thead><tbody id="auditBody"></tbody></table></div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const vnDate = iso => iso ? new Date(iso).toLocaleDateString('vi-VN') : '—';
+const vnTime = iso => iso ? new Date(iso).toLocaleString('vi-VN') : '—';
+let token = null; try { token = sessionStorage.getItem('hdtk_admin_token'); } catch {}
+let lastKeys = [];
+const STAFF = ['admin', 'root'];
+let myRole = null;
+
+async function api(path, method, body) {
+  const r = await fetch('/api/v1' + path, { method: method || 'GET', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { setToken(null); show(false); }
+  if (!r.ok) throw new Error(j.error || ('Lỗi ' + r.status));
+  return j;
+}
+function setToken(t) { token = t; try { t ? sessionStorage.setItem('hdtk_admin_token', t) : sessionStorage.removeItem('hdtk_admin_token'); } catch {} }
+function show(on) { $('#login').classList.toggle('hidden', on); $('#app').classList.toggle('hidden', !on); $('#who').classList.toggle('hidden', !on); }
+
+$('#loginForm').addEventListener('submit', async e => {
+  e.preventDefault(); const f = new FormData(e.target); $('#loginMsg').textContent = '';
+  try {
+    const r = await api('/auth/login', 'POST', { email: f.get('email'), password: f.get('password'), device_id: 'admin-web', device_name: 'Trang quản trị' });
+    if (!STAFF.includes(r.account.role)) { await api('/auth/logout', 'POST').catch(() => {}); throw new Error('Tài khoản này không phải quản trị viên'); }
+    setToken(r.token); start();
+  } catch (err) { setToken(null); $('#loginMsg').className = 'msg err'; $('#loginMsg').textContent = err.message; }
+});
+$('#logoutBtn').addEventListener('click', async () => { await api('/auth/logout', 'POST').catch(() => {}); setToken(null); show(false); });
+
+async function start() {
+  try { const me = await api('/me'); if (!STAFF.includes(me.account.role)) throw new Error(); myRole = me.account.role; $('#whoEmail').textContent = me.account.email + (myRole === 'root' ? ' (root)' : ''); $('#rootCard').classList.toggle('hidden', myRole !== 'root'); show(true); refresh(); }
+  catch { setToken(null); show(false); }
+}
+async function refresh() { await Promise.all([loadStats(), loadKeys(), loadUsers(), loadAudit()]).catch(e => alert(e.message)); }
+
+async function loadStats() {
+  const s = await api('/admin/stats');
+  const items = [['Khách hàng', s.users], ['Chờ xác minh', s.pending], ['Đang dùng thử', s.trial], ['Có license', s.licensed], ['Đã hết hạn', s.expired], ['Key chưa dùng', s.keys_new], ['Key đã kích hoạt', s.keys_active]];
+  $('#stats').innerHTML = items.map(([k, v]) => `<div class="stat"><span>${k}</span><div>${v}</div></div>`).join('');
+  $('#mailInfo').textContent = `Gửi thư: ${s.mail.transport}${s.mail.transport === 'outbox' ? ' (chưa gửi thật — xem data/outbox)' : ' · ' + s.mail.from}`;
+}
+
+const statusPill = { new: '<span class="pill warn">Chưa dùng</span>', active: '<span class="pill ok">Đã kích hoạt</span>', revoked: '<span class="pill bad">Đã thu hồi</span>' };
+async function loadKeys() { lastKeys = await api('/admin/keys' + ($('#keyFilter').value ? '?status=' + $('#keyFilter').value : '')); renderKeys(); }
+function renderKeys() {
+  const q = $('#keySearch').value.trim().toLowerCase();
+  const rows = lastKeys.filter(k => !q || [k.key, k.activated_email, k.customer_email, k.note].join(' ').toLowerCase().includes(q)).slice(0, 500);
+  $('#keysBody').innerHTML = rows.map(k => `<tr><td><code>${esc(k.key)}</code></td><td>${k.days} ngày</td><td>${statusPill[k.status] || esc(k.status)}</td>
+    <td>${esc(k.activated_email || (k.customer_email ? 'dành cho ' + k.customer_email : ''))}${k.activated_at ? '<br><span class="pill">' + vnDate(k.activated_at) + '</span>' : ''}</td>
+    <td>${esc(k.note)}</td><td>${vnDate(k.created_at)}</td>
+    <td>${k.status !== 'revoked' ? `<button class="small" data-revoke="${esc(k.key)}">Thu hồi</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" style="color:var(--muted)">Chưa có key</td></tr>';
+}
+$('#keyFilter').addEventListener('change', loadKeys);
+$('#keySearch').addEventListener('input', renderKeys);
+$('#keysBody').addEventListener('click', async e => {
+  const k = e.target.dataset.revoke; if (!k) return;
+  if (!confirm(`Thu hồi key ${k}?\nNếu key đã kích hoạt, số ngày đã cộng cho khách sẽ bị trừ lại.`)) return;
+  try { await api('/admin/keys/' + encodeURIComponent(k) + '/revoke', 'POST'); refresh(); } catch (err) { alert(err.message); }
+});
+
+$('#genForm').days.addEventListener('change', e => $('#customDaysBox').classList.toggle('hidden', e.target.value !== 'custom'));
+$('#genForm').addEventListener('submit', async e => {
+  e.preventDefault(); const f = new FormData(e.target);
+  const days = f.get('days') === 'custom' ? f.get('customDays') : f.get('days');
+  try {
+    const r = await api('/admin/keys', 'POST', { days, count: f.get('count'), note: f.get('note'), customer_email: f.get('customer_email') });
+    window._gen = r.keys;
+    $('#genKeys').value = r.keys.map(k => `${k.key}  (${k.days} ngày)`).join('\n');
+    $('#genResult').classList.remove('hidden'); refresh();
+  } catch (err) { alert(err.message); }
+});
+$('#copyKeys').addEventListener('click', () => { navigator.clipboard.writeText((window._gen || []).map(k => k.key).join('\n')).catch(() => {}); });
+$('#csvKeys').addEventListener('click', () => {
+  const rows = [['key', 'so_ngay', 'ghi_chu', 'email_khach', 'ngay_tao'], ...(window._gen || []).map(k => [k.key, k.days, k.note, k.customer_email, k.created_at])];
+  const csv = '﻿' + rows.map(r => r.map(v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'license-keys.csv'; a.click();
+});
+
+const planPill = p => ({ trial: '<span class="pill warn">Dùng thử</span>', licensed: '<span class="pill ok">License</span>', trial_expired: '<span class="pill bad">Hết dùng thử</span>', license_expired: '<span class="pill bad">Hết license</span>', admin: '<span class="pill">Quản trị</span>' }[p] || esc(p));
+let userTimer;
+function userActions(u) {
+  if (u.role === 'root') return '<span class="pill">Root</span>';
+  const canEdit = u.role === 'customer' || myRole === 'root';
+  let h = '';
+  if (canEdit && u.role === 'customer') h += `<button class="small" data-extend="${u.id}">+ ngày</button> `;
+  if (canEdit) h += u.status === 'active' ? `<button class="small" data-lock="${u.id}">Khoá</button> ` : u.status === 'disabled' ? `<button class="small" data-unlock="${u.id}">Mở khoá</button> ` : '';
+  if (myRole === 'root') {
+    if (u.status !== 'pending') h += u.role === 'admin' ? `<button class="small" data-role="customer" data-uid="${u.id}">Bỏ quyền QT</button> ` : `<button class="small" data-role="admin" data-uid="${u.id}">Cấp quyền QT</button> `;
+    h += `<button class="small" data-pw="${u.id}">Đặt mật khẩu</button> <button class="small" data-del="${u.id}" style="color:var(--bad)">Xoá</button>`;
+  }
+  return h;
+}
+async function loadUsers() {
+  const users = await api('/admin/users?q=' + encodeURIComponent($('#userSearch').value.trim()));
+  $('#usersBody').innerHTML = users.map(u => `<tr><td>${esc(u.email)}</td><td>${esc(u.name)}</td><td>${esc(u.company)}</td>
+    <td>${u.status === 'pending' ? '<span class="pill">Chờ xác minh</span>' : u.role === 'root' ? '<span class="pill">Root</span>' : planPill(u.plan)}</td><td>${STAFF.includes(u.role) ? '—' : vnDate(u.access_until)}</td><td>${STAFF.includes(u.role) ? '' : u.days_left + ' ngày'}</td><td>${u.devices}</td>
+    <td>${u.status === 'disabled' ? '<span class="pill bad">Khoá</span>' : u.status === 'pending' ? '<span class="pill">Chưa xác minh</span>' : '<span class="pill ok">Hoạt động</span>'}</td>
+    <td>${userActions(u)}</td></tr>`).join('') || '<tr><td colspan="9" style="color:var(--muted)">Chưa có khách hàng</td></tr>';
+}
+$('#userSearch').addEventListener('input', () => { clearTimeout(userTimer); userTimer = setTimeout(loadUsers, 250); });
+$('#usersBody').addEventListener('click', async e => {
+  const d = e.target.dataset;
+  try {
+    if (d.extend) { const n = prompt('Cộng thêm bao nhiêu ngày sử dụng? (số âm để trừ)', '30'); if (!n) return; await api('/admin/users/' + d.extend, 'POST', { add_days: n }); }
+    else if (d.lock) { if (!confirm('Khoá tài khoản này? Khách sẽ bị đăng xuất khỏi mọi máy.')) return; await api('/admin/users/' + d.lock, 'POST', { status: 'disabled' }); }
+    else if (d.unlock) await api('/admin/users/' + d.unlock, 'POST', { status: 'active' });
+    else if (d.role) { if (!confirm(d.role === 'admin' ? 'Cấp quyền quản trị cho tài khoản này?' : 'Bỏ quyền quản trị của tài khoản này?')) return; await api('/root/users/' + d.uid, 'POST', { role: d.role }); }
+    else if (d.pw) { const pw = prompt('Mật khẩu mới (≥ 8 ký tự, có chữ và số). Tài khoản sẽ bị đăng xuất khỏi mọi máy.'); if (!pw) return; await api('/root/users/' + d.pw, 'POST', { new_password: pw }); alert('Đã đặt mật khẩu mới'); }
+    else if (d.del) { if (!confirm('XOÁ hẳn tài khoản này? Không khôi phục được.')) return; await api('/root/users/' + d.del, 'POST', { remove: true }); }
+    else return;
+    refresh();
+  } catch (err) { alert(err.message); }
+});
+
+$('#adminForm').addEventListener('submit', async e => {
+  e.preventDefault(); const f = new FormData(e.target); const m = $('#adminMsg');
+  try { const u = await api('/root/admins', 'POST', { email: f.get('email'), name: f.get('name'), password: f.get('password') }); m.className = 'msg ok'; m.textContent = 'Đã thêm quản trị viên ' + u.email; e.target.reset(); refresh(); }
+  catch (err) { m.className = 'msg err'; m.textContent = err.message; }
+});
+async function loadAudit() {
+  const a = await api('/admin/audit');
+  $('#auditBody').innerHTML = a.slice(0, 100).map(x => `<tr><td>${vnTime(x.at)}</td><td>${esc(x.action)}</td><td>${esc(x.actor)}</td><td>${esc(x.detail)}</td></tr>`).join('');
+}
+$('#testMailBtn').addEventListener('click', async () => {
+  const m = $('#testMailMsg'); m.className = 'msg'; m.textContent = 'Đang gửi…';
+  try { await api('/admin/test-mail', 'POST', { to: $('#testMailTo').value.trim() || undefined }); m.className = 'msg ok'; m.textContent = 'Đã gửi'; }
+  catch (err) { m.className = 'msg err'; m.textContent = err.message; }
+});
+
+if (token) start(); else show(false);
+</script>
+</body>
+</html>

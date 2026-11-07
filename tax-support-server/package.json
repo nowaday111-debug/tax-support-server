@@ -1,0 +1,15 @@
+{
+  "name": "hdtk-license-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Máy chủ tài khoản & license cho Hóa đơn & Tờ khai: đăng ký email + mã xác minh, dùng thử 30 ngày, tạo và kích hoạt license-key.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "cli": "node cli.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "express": "^5.3.0"
+  }
+}

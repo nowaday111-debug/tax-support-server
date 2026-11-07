@@ -1,0 +1,14 @@
+services:
+  license-server:
+    build: .
+    container_name: tax-support-server
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      LICENSE_DATA_DIR: /srv/data
+      LICENSE_HOST: 0.0.0.0
+      LICENSE_PORT: 4000
+    volumes:
+      - ./data:/srv/data
+    ports:
+      - "127.0.0.1:4000:4000"   # chỉ mở cho nginx trên cùng máy

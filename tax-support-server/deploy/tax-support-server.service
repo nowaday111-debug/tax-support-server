@@ -1,0 +1,23 @@
+[Unit]
+Description=Tax Support license/management server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=taxsupport
+Group=taxsupport
+WorkingDirectory=/opt/tax-support-server
+Environment=NODE_ENV=production
+Environment=LICENSE_HOST=127.0.0.1
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/tax-support-server/data
+
+[Install]
+WantedBy=multi-user.target
